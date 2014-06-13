@@ -147,8 +147,6 @@ function nodequeue_pager_theme() {
  * @return
  *   An HTML string of the pager
  */
-
-
 function theme_nodequeue_pager($vars) {
 	$pager = getPager($vars['sqid'], $vars['wrap']);
 
