@@ -215,7 +215,7 @@ function getPager($sqid, $wrap = TRUE) {
 function _getPagerNext($pager, $nid) {
   $next = $pager->nodes_in_queue[$nid]->position + 1;
   if (count($pager->nodes_in_queue)-1 == $pager->nodes_in_queue[$nid]->position) { // last item on the list
-    if ($this->wrap) {
+    if ($pager->wrap) {
       $next = 0;
     } else {
       return NULL;
