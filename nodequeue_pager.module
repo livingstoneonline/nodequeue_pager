@@ -138,34 +138,35 @@ function nodequeue_pager_theme() {
 /**
  * Builds the final Nodequeue Pager.
  *
- * @param $sqid
- *   The id of the nodequeue to use
- * @param $nid
- *   The id of the node within the nodequeue.
- * @param $wrap
- *   Boolean true or false value as to whether prev and next
+ * @param $variables
+ *   An associative array containing:
+ *   - sqid: The id of the nodequeue to use
+ *   - nid: The id of the node within the nodequeue.
+ *   - wrap: Boolean true or false value as to whether prev and next
  *   links should wrap back to begining or end of nodequeue.
  * @return
  *   An HTML string of the pager
  */
-function theme_nodequeue_pager($sqid = 1, $nid = NULL, $wrap = TRUE, $links = 2, $title = false) {
 
-	$pager = new NodequeuePager($sqid, $wrap);
+
+function theme_nodequeue_pager($vars) {
+	$pager = getPager($vars['sqid'], $vars['wrap']);
 
 	$prev = FALSE;
 	$next = FALSE;
-	switch ($links) {
+
+	switch ($vars['links']) {
 		case 0:
-			$prev = $pager->getPrevious($nid);
+			$prev = _getPagerPrevious($pager, $vars['nid']);
 			break;
 
 		case 1:
-			$next = $pager->getNext($nid);
+			$next = _getPagerNext($pager, $vars['nid']);
 			break;
 
 		default:
-			$prev = $pager->getPrevious($nid);
-			$next = $pager->getNext($nid);
+			$prev = _getPagerPrevious($pager, $vars['nid']);
+			$next = _getPagerNext($pager, $vars['nid']);
 			break;
 	}
 
@@ -173,7 +174,7 @@ function theme_nodequeue_pager($sqid = 1, $nid = NULL, $wrap = TRUE, $links = 2,
 
 	if ($prev) {
 		$text = variable_get('nodequeue_pagers_previous', t('Previous'));
-		if($title) {
+		if($vars['title']) {
 			$node = node_load($prev);
 			$text .= ' <span class="title">' . $node->title . '<span>';
 		}
@@ -181,7 +182,7 @@ function theme_nodequeue_pager($sqid = 1, $nid = NULL, $wrap = TRUE, $links = 2,
 	}
 	if ($next) {
 		$text = variable_get('nodequeue_pagers_next', t('Next'));
-		if($title) {
+		if($vars['title']) {
 			$node = node_load($next);
 			$text .= ' <span class="title">' . $node->title . '<span>';
 		}
@@ -201,18 +202,60 @@ function nodequeue_pager_settings_validate($form, &$form_state) {
 	}
 }
 
+function getPager($sqid, $wrap = TRUE) {
+	$pager = new stdClass;
+	$pager->sqid = $sqid;
+	$pager->wrap = $wrap;
+  foreach (nodequeue_load_nodes($sqid, $backward = FALSE, $from = 0, $count = 0, $published_only = TRUE) as $position => $node) {
+    $pager->nodes_in_queue[$node->nid] = $node;
+    $pager->nodes_in_queue[$node->nid]->position = $position;
+    $pager->positions[$position] = $node;
+  }
+  return $pager;
+}
+
+function _getPagerNext($pager, $nid) {
+  $next = $pager->nodes_in_queue[$nid]->position + 1;
+  if (count($pager->nodes_in_queue)-1 == $pager->nodes_in_queue[$nid]->position) { // last item on the list
+    if ($this->wrap) {
+      $next = 0;
+    } else {
+      return NULL;
+    }
+  }
+  return $pager->positions[$next]->nid;
+}
+function _getPagerPrevious($pager, $nid) {
+  $previous = $pager->nodes_in_queue[$nid]->position - 1;
+  if ( $previous == -1 ) {  // first item on the list
+    if ($pager->wrap) {
+      $previous = count($pager->nodes_in_queue)-1;
+    } else {
+      $previous = NULL;
+    }
+  }
+  return $pager->positions[$previous]->nid;
+ }
+
 /**
  * Pager block content function calls themeable function with correct parameters.
  */
 function _nodequeue_pager_block($delta) {
-	require_once(dirname(__FILE__) .'/NodequeuePager.class.php');
+	// require_once(dirname(__FILE__) .'/NodequeuePager.class.php');
 	$sqid = variable_get('nodequeue_pager_nodequeue_'. $delta, '1');
 	$nid = arg(1);
 	if(nodequeue_get_subqueue_position($sqid, $nid)) {
 		$wrap = (variable_get('nodequeue_pager_wrap_'. $delta, 1)==1)?true:false;
 		$links = variable_get('nodequeue_pager_links_'. $delta, '1');
 		$title = variable_get('nodequeue_pager_title_'. $delta, '1');
-		return theme_nodequeue_pager($sqid, $nid, $wrap, $links, $title);
+		$vars = array(
+			'sqid' => $sqid, 
+			'nid' => $nid, 
+			'wrap' => $wrap, 
+			'links' => $links, 
+			'title' => $title
+		);
+		return theme('nodequeue_pager', $vars);
 	}
 	return FALSE;
 }
