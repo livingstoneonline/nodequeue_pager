@@ -204,10 +204,12 @@ function getPager($sqid, $wrap = TRUE) {
 	$pager = new stdClass;
 	$pager->sqid = $sqid;
 	$pager->wrap = $wrap;
-  foreach (nodequeue_load_nodes($sqid, $backward = FALSE, $from = 0, $count = 0, $published_only = TRUE) as $position => $node) {
+    $position = 0;
+  foreach (nodequeue_load_nodes($sqid, $backward = FALSE, $from = 0, $count = 0, $published_only = TRUE) as $node) {
     $pager->nodes_in_queue[$node->nid] = $node;
     $pager->nodes_in_queue[$node->nid]->position = $position;
     $pager->positions[$position] = $node;
+    $position += 1;
   }
   return $pager;
 }
@@ -247,10 +249,10 @@ function _nodequeue_pager_block($delta) {
 		$links = variable_get('nodequeue_pager_links_'. $delta, '1');
 		$title = variable_get('nodequeue_pager_title_'. $delta, '1');
 		$vars = array(
-			'sqid' => $sqid, 
-			'nid' => $nid, 
-			'wrap' => $wrap, 
-			'links' => $links, 
+			'sqid' => $sqid,
+			'nid' => $nid,
+			'wrap' => $wrap,
+			'links' => $links,
 			'title' => $title
 		);
 		return theme('nodequeue_pager', $vars);
