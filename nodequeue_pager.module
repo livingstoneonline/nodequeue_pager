@@ -204,7 +204,7 @@ function getPager($sqid, $wrap = TRUE) {
 	$pager = new stdClass;
 	$pager->sqid = $sqid;
 	$pager->wrap = $wrap;
-    $position = 0;
+  $position = 0;
   foreach (nodequeue_load_nodes($sqid, $backward = FALSE, $from = 0, $count = 0, $published_only = TRUE) as $node) {
     $pager->nodes_in_queue[$node->nid] = $node;
     $pager->nodes_in_queue[$node->nid]->position = $position;
@@ -215,6 +215,7 @@ function getPager($sqid, $wrap = TRUE) {
 }
 
 function _getPagerNext($pager, $nid) {
+  if (!isset($pager->nodes_in_queue[$nid])) return NULL;
   $next = $pager->nodes_in_queue[$nid]->position + 1;
   if (count($pager->nodes_in_queue)-1 == $pager->nodes_in_queue[$nid]->position) { // last item on the list
     if ($pager->wrap) {
@@ -226,6 +227,7 @@ function _getPagerNext($pager, $nid) {
   return $pager->positions[$next]->nid;
 }
 function _getPagerPrevious($pager, $nid) {
+  if (!isset($pager->nodes_in_queue[$nid])) return NULL;
   $previous = $pager->nodes_in_queue[$nid]->position - 1;
   if ( $previous == -1 ) {  // first item on the list
     if ($pager->wrap) {
